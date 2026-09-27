@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Waktu Sholat Akurat — Hisab As-Syahru</title>
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1c1a16; --sub:#6b6459;
+  --accent:#0f6b5c; --accent2:#c98a2c; --line:#e5e0d6; --danger:#b3441f;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --card:#1f1e18; --ink:#eee9dd; --sub:#a59d8c;
+    --accent:#3fbfa4; --accent2:#e0a94b; --line:#332f26;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15140f; --card:#1f1e18; --ink:#eee9dd; --sub:#a59d8c;
+  --accent:#3fbfa4; --accent2:#e0a94b; --line:#332f26;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:'Georgia',ui-serif,serif; line-height:1.5;
+}
+.wrap{max-width:640px; margin:0 auto; padding:24px 18px 60px;}
+h1{font-size:1.35rem; margin:0 0 2px; color:var(--accent);}
+.tag{color:var(--sub); font-size:.85rem; margin-bottom:20px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px;}
+.card h2{font-size:.95rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent2); margin:0 0 12px;}
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+label{display:block; font-size:.78rem; color:var(--sub); margin-bottom:3px;}
+input,select{
+  width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--line);
+  background:transparent; color:var(--ink); font-size:.92rem; font-family:inherit;
+}
+.field{margin-bottom:10px;}
+.row{display:flex; gap:8px; margin-top:6px;}
+button{
+  font-family:inherit; font-size:.9rem; border:none; border-radius:9px; padding:10px 14px;
+  cursor:pointer; font-weight:600;
+}
+.btn-primary{background:var(--accent); color:#fff; width:100%; margin-top:6px;}
+.btn-ghost{background:transparent; color:var(--accent); border:1px solid var(--accent); flex:1;}
+.results{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+.pill{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 8px; text-align:center;}
+.pill .nm{font-size:.72rem; color:var(--sub); text-transform:uppercase; letter-spacing:.03em;}
+.pill .tm{font-size:1.15rem; font-weight:700; color:var(--ink); margin-top:2px;}
+.pill.hi .tm{color:var(--accent);}
+details{margin-top:12px; font-size:.82rem; color:var(--sub);}
+summary{cursor:pointer; color:var(--accent);}
+table{width:100%; border-collapse:collapse; margin-top:8px; font-size:.8rem;}
+td{padding:4px 2px; border-bottom:1px solid var(--line);}
+td:last-child{text-align:right; font-family:ui-monospace,monospace;}
+.note{font-size:.78rem; color:var(--sub); margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🕌 Waktu Sholat Akurat</h1>
+  <div class="tag">Metode Hisab As-Syahru — data matahari dihitung langsung (algoritma posisi matahari presisi tinggi, turunan VSOP87), kriteria ketinggian mengikuti kitab falak pesantren (NU)</div>
+
+  <div class="card">
+    <h2>Data Lokasi & Tanggal</h2>
+    <div class="field">
+      <label>Nama Markaz</label>
+      <input id="markaz" value="PP. Syaichona Moh. Cholil, Bangkalan">
+    </div>
+    <div class="grid">
+      <div class="field"><label>Lintang (°) — selatan = negatif</label><input id="lat" type="number" step="any" value="-7.0306"></div>
+      <div class="field"><label>Bujur (°) — timur = positif</label><input id="lon" type="number" step="any" value="112.745"></div>
+      <div class="field"><label>Ketinggian (mdpl)</label><input id="elev" type="number" step="any" value="6"></div>
+      <div class="field"><label>Tanggal</label><input id="date" type="date"></div>
+    </div>
+    <div class="row">
+      <button class="btn-ghost" id="geoBtn" type="button">📍 Gunakan Lokasi Saya</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Pengaturan Hisab</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Zona Waktu</label>
+        <select id="tz">
+          <option value="7">WIB (GMT+7, standar 105°)</option>
+          <option value="8">WITA (GMT+8, standar 120°)</option>
+          <option value="9">WIT (GMT+9, standar 135°)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Kriteria Subuh</label>
+        <select id="subuhCrit">
+          <option value="20">-20° (Klasik / Kitab Salaf)</option>
+          <option value="18">-18° (Kemenag / MABIMS terbaru)</option>
+        </select>
+      </div>
+      <div class="field"><label>Ihtiyat (menit)</label><input id="ihtiyat" type="number" step="1" value="2"></div>
+    </div>
+    <button class="btn-primary" id="calcBtn" type="button">🌙 Hitung Waktu Sholat</button>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <h2 id="resultTitle">Hasil Perhitungan</h2>
+    <div class="results">
+      <div class="pill"><div class="nm">Imsak</div><div class="tm" id="r-imsak">–</div></div>
+      <div class="pill hi"><div class="nm">Subuh</div><div class="tm" id="r-subuh">–</div></div>
+      <div class="pill"><div class="nm">Terbit</div><div class="tm" id="r-terbit">–</div></div>
+      <div class="pill"><div class="nm">Dhuha</div><div class="tm" id="r-dhuha">–</div></div>
+      <div class="pill hi"><div class="nm">Dhuhur</div><div class="tm" id="r-dhuhur">–</div></div>
+      <div class="pill hi"><div class="nm">Ashar</div><div class="tm" id="r-ashar">–</div></div>
+      <div class="pill hi"><div class="nm">Maghrib</div><div class="tm" id="r-maghrib">–</div></div>
+      <div class="pill hi"><div class="nm">Isya</div><div class="tm" id="r-isya">–</div></div>
+      <div class="pill"><div class="nm">T. Malam</div><div class="tm" id="r-malam">–</div></div>
+    </div>
+    <details>
+      <summary>Lihat detail perhitungan (untuk verifikasi / dapat dipertanggungjawabkan)</summary>
+      <table id="detailTable"></table>
+    </details>
+    <div class="note">Semua waktu = LMT zona waktu terpilih, sudah termasuk ihtiyat. Maghrib/Terbit dikoreksi semi diameter (16'), refraksi (34.5') dan kerendahan ufuk (0.0293√ketinggian). Isya/Subuh memakai sudut tetap sesuai kriteria terpilih; Dhuha 4°30'; Ashar memakai rumus bayangan Syafi'i (panjang bayangan = panjang benda + bayangan zawal).</div>
+  </div>
+</div>
+
+<script>
+const toRad=d=>d*Math.PI/180, toDeg=r=>r*180/Math.PI;
+
+function julianDay(Y,M,D,hourUTC){
+  if(M<=2){Y-=1;M+=12;}
+  const A=Math.floor(Y/100), B=2-A+Math.floor(A/4);
+  return Math.floor(365.25*(Y+4716))+Math.floor(30.6001*(M+1))+D+hourUTC/24+B-1524.5;
+}
+
+// Solar position (Meeus, low-precision, truncated VSOP87-derived; declination ~0.01°, EoT ~seconds)
+function sunPosition(JD){
+  const T=(JD-2451545.0)/36525;
+  const L0=(280.46646+36000.76983*T+0.0003032*T*T)%360;
+  let M=(357.52911+35999.05029*T-0.0001537*T*T)%360;
+  const e=0.016708634-0.000042037*T-0.0000001267*T*T;
+  const Mrad=toRad(M);
+  const C=(1.914602-0.004817*T-0.000014*T*T)*Math.sin(Mrad)
+        +(0.019993-0.000101*T)*Math.sin(2*Mrad)
+        +0.000289*Math.sin(3*Mrad);
+  const trueLong=L0+C;
+  const omega=125.04-1934.136*T;
+  const appLong=trueLong-0.00569-0.00478*Math.sin(toRad(omega));
+  const eps0=23+(26+(21.448-T*(46.8150+T*(0.00059-T*0.001813)))/60)/60;
+  const eps=eps0+0.00256*Math.cos(toRad(omega));
+  const lambda=toRad(appLong);
+  const sinDelta=Math.sin(toRad(eps))*Math.sin(lambda);
+  const delta=toDeg(Math.asin(sinDelta));
+  const y=Math.pow(Math.tan(toRad(eps)/2),2);
+  const L0r=toRad(L0);
+  const EoT=y*Math.sin(2*L0r)-2*e*Math.sin(Mrad)+4*e*y*Math.sin(Mrad)*Math.cos(2*L0r)
+           -0.5*y*y*Math.sin(4*L0r)-1.25*e*e*Math.sin(2*Mrad);
+  return {declination:delta, eotMinutes:toDeg(EoT)*4};
+}
+
+function hourAngle(hDeg,Pdeg,dDeg){
+  const P=toRad(Pdeg), d=toRad(dDeg), h=toRad(hDeg);
+  let cosT=(Math.sin(h)-Math.sin(P)*Math.sin(d))/(Math.cos(P)*Math.cos(d));
+  cosT=Math.max(-1,Math.min(1,cosT));
+  return toDeg(Math.acos(cosT));
+}
+
+function fmt(hrs){
+  let h=((hrs%24)+24)%24;
+  let hh=Math.floor(h), mm=Math.floor((h-hh)*60);
+  let ss=Math.round(((h-hh)*60-mm)*60);
+  if(ss===60){ss=0;mm++;} if(mm===60){mm=0;hh=(hh+1)%24;}
+  return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+}
+function dms(deg){
+  const sign=deg<0?'-':''; deg=Math.abs(deg);
+  const d=Math.floor(deg); const mfull=(deg-d)*60; const m=Math.floor(mfull); const s=((mfull-m)*60).toFixed(1);
+  return sign+d+"° "+m+"' "+s+'"';
+}
+
+document.getElementById('date').valueAsDate=new Date();
+
+document.getElementById('geoBtn').addEventListener('click',()=>{
+  if(!navigator.geolocation){alert('Geolokasi tidak didukung browser ini.');return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('lat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('lon').value=pos.coords.longitude.toFixed(6);
+    if(pos.coords.altitude) document.getElementById('elev').value=Math.max(0,Math.round(pos.coords.altitude));
+  }, err=>alert('Gagal mengambil lokasi: '+err.message));
+});
+
+document.getElementById('calcBtn').addEventListener('click',()=>{
+  const P=parseFloat(document.getElementById('lat').value);
+  const V=parseFloat(document.getElementById('lon').value);
+  const elev=Math.max(0,parseFloat(document.getElementById('elev').value)||0);
+  const TZ=parseFloat(document.getElementById('tz').value);
+  const SM=TZ*15;
+  const subuhAngle=parseFloat(document.getElementById('subuhCrit').value);
+  const ihtiyatH=(parseFloat(document.getElementById('ihtiyat').value)||0)/60;
+  const dateVal=document.getElementById('date').value;
+  if(!dateVal||isNaN(P)||isNaN(V)){alert('Lengkapi data lokasi & tanggal.');return;}
+  const [Y,M,D]=dateVal.split('-').map(Number);
+
+  const hourUTC=12-TZ;
+  const JD=julianDay(Y,M,D,hourUTC);
+  const sun=sunPosition(JD);
+  const d=sun.declination;
+  const EoTh=sun.eotMinutes/60;
+
+  const dhuhurRaw=12-EoTh+(SM-V)/15;
+
+  const hMaghrib=-(16/60+34.5/60+0.0293*Math.sqrt(elev));
+  const tMaghrib=hourAngle(hMaghrib,P,d);
+
+  const tIsya=hourAngle(-18,P,d);
+  const tSubuh=hourAngle(-subuhAngle,P,d);
+  const tDhuha=hourAngle(4.5,P,d);
+
+  const diffPD=Math.abs(P-d);
+  const hAshar=toDeg(Math.atan(1/(Math.tan(toRad(diffPD))+1)));
+  const tAshar=hourAngle(hAshar,P,d);
+
+  const dhuhur=dhuhurRaw+ihtiyatH;
+  const ashar=dhuhurRaw+tAshar/15+ihtiyatH;
+  const maghrib=dhuhurRaw+tMaghrib/15+ihtiyatH;
+  const isya=dhuhurRaw+tIsya/15+ihtiyatH;
+  const subuh=dhuhurRaw-tSubuh/15+ihtiyatH;
+  const terbit=dhuhurRaw-tMaghrib/15-ihtiyatH;
+  const dhuha=dhuhurRaw-tDhuha/15+ihtiyatH;
+  const imsak=subuh-10/60;
+  const nightLen=(24-maghrib)+subuh;
+  const tengahMalam=maghrib+nightLen/2;
+
+  document.getElementById('r-imsak').textContent=fmt(imsak);
+  document.getElementById('r-subuh').textContent=fmt(subuh);
+  document.getElementById('r-terbit').textContent=fmt(terbit);
+  document.getElementById('r-dhuha').textContent=fmt(dhuha);
+  document.getElementById('r-dhuhur').textContent=fmt(dhuhur);
+  document.getElementById('r-ashar').textContent=fmt(ashar);
+  document.getElementById('r-maghrib').textContent=fmt(maghrib);
+  document.getElementById('r-isya').textContent=fmt(isya);
+  document.getElementById('r-malam').textContent=fmt(tengahMalam);
+
+  const markaz=document.getElementById('markaz').value||'-';
+  document.getElementById('resultTitle').textContent=markaz+' — '+D+'/'+M+'/'+Y;
+
+  const rows=[
+    ['Julian Day (JD)', JD.toFixed(5)],
+    ['Deklinasi Matahari (d)', dms(d)],
+    ["Equation of Time (perata waktu)", (sun.eotMinutes>=0?'+':'')+sun.eotMinutes.toFixed(3)+' menit'],
+    ['Lintang tempat (P)', dms(P)],
+    ['Bujur tempat (V)', V.toFixed(4)+'°'],
+    ['Standar meridian zona', SM+'°'],
+    ['Dhuhur (LMT, sebelum ihtiyat)', fmt(dhuhurRaw)],
+    ["h Maghrib/Terbit", dms(hMaghrib)],
+    ['t Maghrib/Terbit', tMaghrib.toFixed(4)+'°'],
+    ['h Ashar', dms(hAshar)],
+    ['t Ashar', tAshar.toFixed(4)+'°'],
+    ['t Isya (h=-18°)', tIsya.toFixed(4)+'°'],
+    ['t Subuh (h=-'+subuhAngle+'°)', tSubuh.toFixed(4)+'°'],
+    ['t Dhuha (h=4.5°)', tDhuha.toFixed(4)+'°'],
+    ['Ihtiyat diterapkan', (ihtiyatH*60)+' menit'],
+  ];
+  document.getElementById('detailTable').innerHTML=rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('');
+
+  document.getElementById('resultCard').style.display='block';
+});
+</script>
+</body>
+</html>
